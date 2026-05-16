@@ -51,4 +51,5 @@ and keeps the local HTML tooling audit in the
 [HTML Tooling Inventory](html-tooling-inventory.md).
 
 Preview runs update repo files and refuse to start from a dirty Git baseline
-unless `--allow-dirty-baseline` is passed.
+unless `--allow-dirty-baseline` is passed. Use the standalone styled renderer
+only when a single finished HTML document is needed outside the MkDocs site.

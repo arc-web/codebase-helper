@@ -66,6 +66,16 @@ The script records rendered pages in `docs/artifacts/index.md` unless
 `--skip-gallery` is used. It also runs static checks after the strict MkDocs
 build unless `--skip-checks` is used.
 
+Render a standalone styled HTML document without adding it to the MkDocs site:
+
+```bash
+python3 scripts/render_styled.py docs/supabase-visual-reference-research.md --output /tmp/codebase-helper-supabase-reference.html --no-open
+```
+
+`scripts/render_styled.py` uses the root `assets/*.css` files and writes to
+`~/Desktop` by default. For tests and temporary previews, write outputs under
+`/tmp` so standalone artifacts do not become repo state.
+
 ## Expected Use Cases
 
 - Turn implementation notes into navigable local HTML.

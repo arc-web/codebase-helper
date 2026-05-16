@@ -19,6 +19,10 @@ The script updates `docs/artifacts/index.md` and runs static checks by default.
 Because preview runs mutate repo files, the script refuses to run on an already
 dirty Git baseline unless `--allow-dirty-baseline` is passed intentionally.
 
+Use `scripts/render_styled.py` only when the user asks for a standalone styled
+HTML or PDF artifact outside the MkDocs preview site. Write temporary outputs
+under `/tmp` during tests.
+
 ## Default Workflow
 
 1. Copy the requested Markdown file into `docs/`.
