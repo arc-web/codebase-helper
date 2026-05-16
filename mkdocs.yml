@@ -1,5 +1,7 @@
 site_name: Codebase Helper
 site_description: Markdown previews and navigable codebase communication artifacts.
+extra_css:
+- stylesheets/artifacts.css
 theme:
   name: material
   features:
@@ -15,6 +17,10 @@ theme:
 nav:
 - Home: index.md
 - Learning Example: learning-example.md
+- Artifact Gallery: artifacts/index.md
+- HTML Tooling Inventory: html-tooling-inventory.md
+- Repo Walkthrough Sample: repo-walkthrough-sample.md
+- Handoff Sample: handoff-sample.md
 markdown_extensions:
 - admonition
 - attr_list

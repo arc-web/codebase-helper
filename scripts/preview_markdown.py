@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -22,6 +23,30 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOCS_DIR = PROJECT_ROOT / "docs"
 MKDOCS_CONFIG = PROJECT_ROOT / "mkdocs.yml"
 CACHE_DIR = PROJECT_ROOT / ".cache"
+GALLERY_PATH = DOCS_DIR / "artifacts" / "index.md"
+MANIFEST_PATH = CACHE_DIR / "artifacts.json"
+PRESETS = {
+    "note": {
+        "label": "Note",
+        "summary": "Fast Markdown preview with source provenance.",
+    },
+    "handoff": {
+        "label": "Handoff",
+        "summary": "Decision, context, and next-action packet for another agent or human.",
+    },
+    "repo-walkthrough": {
+        "label": "Repo Walkthrough",
+        "summary": "Navigable codebase tour with exact paths and commands.",
+    },
+    "implementation-summary": {
+        "label": "Implementation Summary",
+        "summary": "Change summary with affected files, commands, and verification evidence.",
+    },
+    "review-packet": {
+        "label": "Review Packet",
+        "summary": "Review-ready findings, risks, and evidence for sign-off.",
+    },
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,9 +56,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source", type=Path, help="Markdown file to preview.")
     parser.add_argument("--title", help="Navigation title. Defaults to the first H1.")
     parser.add_argument("--slug", help="Destination slug under docs/. Defaults to source stem.")
+    parser.add_argument(
+        "--preset",
+        choices=sorted(PRESETS),
+        default="note",
+        help="Artifact preset metadata and gallery grouping.",
+    )
     parser.add_argument("--port", type=int, default=8012, help="Preferred localhost port.")
     parser.add_argument("--build-only", action="store_true", help="Build without serving or opening.")
     parser.add_argument("--no-open", action="store_true", help="Do not call macOS open.")
+    parser.add_argument(
+        "--skip-gallery",
+        action="store_true",
+        help="Do not update docs/artifacts/index.md or the artifact manifest.",
+    )
+    parser.add_argument(
+        "--skip-checks",
+        action="store_true",
+        help="Skip static checks after MkDocs build.",
+    )
+    parser.add_argument(
+        "--allow-dirty-baseline",
+        action="store_true",
+        help="Allow preview mutations when the Git worktree is already dirty.",
+    )
     return parser.parse_args()
 
 
@@ -49,7 +95,35 @@ def first_h1(markdown: str) -> str | None:
     return None
 
 
-def copy_source(source: Path, slug: str | None) -> tuple[Path, str]:
+def source_label(source: Path) -> str:
+    try:
+        return source.resolve().relative_to(Path.home()).as_posix()
+    except ValueError:
+        return source.resolve().as_posix()
+
+
+def artifact_header(source: Path, preset: str) -> str:
+    preset_info = PRESETS[preset]
+    return "\n".join(
+        [
+            '<div class="artifact-meta" markdown="1">',
+            "",
+            f"**Preset:** {preset_info['label']}",
+            f"**Source:** `{source_label(source)}`",
+            f"**Use:** {preset_info['summary']}",
+            "",
+            "</div>",
+            "",
+        ]
+    )
+
+
+def prepare_markdown(markdown: str, source: Path, preset: str) -> str:
+    header = artifact_header(source, preset)
+    return f"{markdown.rstrip()}\n\n{header}"
+
+
+def copy_source(source: Path, slug: str | None, preset: str) -> tuple[Path, str]:
     source = source.expanduser().resolve()
     if not source.exists():
         raise FileNotFoundError(f"Markdown source does not exist: {source}")
@@ -62,7 +136,7 @@ def copy_source(source: Path, slug: str | None) -> tuple[Path, str]:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
     if source != destination.resolve():
-        shutil.copyfile(source, destination)
+        destination.write_text(prepare_markdown(markdown, source, preset), encoding="utf-8")
 
     return destination, markdown
 
@@ -100,11 +174,151 @@ def update_nav(destination: Path, title: str) -> None:
         nav.append({title: rel_path})
 
     with MKDOCS_CONFIG.open("w", encoding="utf-8") as handle:
-        yaml.safe_dump(config, handle, sort_keys=False)
+        yaml.safe_dump(config, handle, sort_keys=False, allow_unicode=True)
 
 
 def run_build() -> None:
     subprocess.run(["mkdocs", "build", "--strict"], cwd=PROJECT_ROOT, check=True)
+
+
+def site_path_for_doc(destination: Path) -> Path:
+    rel_path = destination.relative_to(DOCS_DIR)
+    if rel_path.name == "index.md":
+        return PROJECT_ROOT / "site" / rel_path.parent / "index.html"
+    return PROJECT_ROOT / "site" / rel_path.with_suffix("") / "index.html"
+
+
+def preview_path_for_doc(destination: Path) -> str:
+    rel_path = destination.relative_to(DOCS_DIR)
+    if rel_path.name == "index.md":
+        return rel_path.parent.as_posix().strip("/")
+    return rel_path.with_suffix("").as_posix().strip("/")
+
+
+def iter_markdown_links(markdown: str) -> list[str]:
+    links: list[str] = []
+    for match in re.finditer(r"(?<!!)\[[^\]]+\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)", markdown):
+        links.append(match.group(1))
+    return links
+
+
+def is_external_link(target: str) -> bool:
+    return bool(re.match(r"^[a-z][a-z0-9+.-]*:", target, flags=re.IGNORECASE))
+
+
+def run_static_checks(source: Path, markdown: str, destination: Path, title: str) -> None:
+    errors: list[str] = []
+    if not title.strip():
+        errors.append("missing page title")
+
+    rendered = site_path_for_doc(destination)
+    if not rendered.is_file():
+        errors.append(f"missing generated HTML: {rendered}")
+    elif rendered.stat().st_size < 500:
+        errors.append(f"generated HTML is unexpectedly small: {rendered}")
+    else:
+        html = rendered.read_text(encoding="utf-8", errors="replace")
+        if title not in html:
+            errors.append(f"generated HTML does not contain title: {title}")
+
+    for target in iter_markdown_links(markdown):
+        target = target.split("#", 1)[0]
+        if not target or target.startswith("#") or is_external_link(target):
+            continue
+        candidate = Path(target).expanduser()
+        if not candidate.is_absolute():
+            candidate = source.parent / candidate
+        if not candidate.exists():
+            errors.append(f"broken source link in {source}: {target}")
+
+    if errors:
+        joined = "\n".join(f"- {error}" for error in errors)
+        raise RuntimeError(f"static checks failed:\n{joined}")
+
+
+def read_manifest() -> list[dict[str, str]]:
+    if not MANIFEST_PATH.exists():
+        return []
+    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, list):
+        return []
+    return [item for item in data if isinstance(item, dict)]
+
+
+def write_manifest(items: list[dict[str, str]]) -> None:
+    CACHE_DIR.mkdir(exist_ok=True)
+    MANIFEST_PATH.write_text(
+        json.dumps(items, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def update_gallery(source: Path, destination: Path, title: str, preset: str) -> None:
+    rel_path = destination.relative_to(DOCS_DIR).as_posix()
+    items = [item for item in read_manifest() if item.get("docs_page") != rel_path]
+    items.append(
+        {
+            "title": title,
+            "preset": preset,
+            "docs_page": rel_path,
+            "source": source.resolve().as_posix(),
+        }
+    )
+    items.sort(key=lambda item: (item.get("preset", ""), item.get("title", "")))
+    write_manifest(items)
+
+    GALLERY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# Artifact Gallery",
+        "",
+        "Rendered Markdown artifacts tracked by `scripts/preview_markdown.py`.",
+        "",
+        "| Preset | Artifact | Source Markdown |",
+        "| --- | --- | --- |",
+    ]
+    for item in items:
+        page = item.get("docs_page", "")
+        label = item.get("title", page)
+        if page:
+            page_link = f"[{label}](../{page})"
+        else:
+            page_link = label
+        lines.append(
+            f"| {PRESETS.get(item.get('preset', ''), {}).get('label', item.get('preset', ''))} "
+            f"| {page_link} | `{source_label(Path(item.get('source', '')) if item.get('source') else Path('.'))}` |"
+        )
+    GALLERY_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def dirty_worktree_entries() -> list[str]:
+    result = subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=PROJECT_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line for line in result.stdout.splitlines() if line.strip()]
+
+
+def assert_clean_baseline(allow_dirty_baseline: bool) -> None:
+    if allow_dirty_baseline:
+        return
+
+    dirty_entries = dirty_worktree_entries()
+    if not dirty_entries:
+        return
+
+    dirty_files = "\n".join(f"- {entry}" for entry in dirty_entries)
+    raise RuntimeError(
+        "dirty baseline detected; refusing to run a mutating Markdown preview.\n"
+        "This command can update `mkdocs.yml`, "
+        "`docs/artifacts/index.md`, `.cache/artifacts.json`, and copied pages "
+        "under `docs/`.\n"
+        "Commit, stash, or clean the existing changes, or rerun with "
+        "`--allow-dirty-baseline` when those changes are intentional.\n"
+        f"Dirty files:\n{dirty_files}"
+    )
 
 
 def fetch_text(url: str) -> str | None:
@@ -184,20 +398,29 @@ def open_url(url: str) -> None:
 def main() -> int:
     args = parse_args()
     try:
-        destination, markdown = copy_source(args.source, args.slug)
+        assert_clean_baseline(args.allow_dirty_baseline)
+        source = args.source.expanduser().resolve()
+        destination, markdown = copy_source(source, args.slug, args.preset)
         title = args.title or first_h1(markdown) or destination.stem.replace("-", " ").title()
         update_nav(destination, title)
+        if not args.skip_gallery:
+            update_gallery(source, destination, title, args.preset)
+            update_nav(GALLERY_PATH, "Artifact Gallery")
         run_build()
+        if not args.skip_checks:
+            run_static_checks(source, markdown, destination, title)
 
-        print(f"source={args.source.expanduser().resolve()}")
+        print(f"source={source}")
         print(f"docs_page={destination}")
+        print(f"preset={args.preset}")
         print(f"title={title}")
 
         if args.build_only:
             return 0
 
         url = start_or_reuse_server(args.port)
-        page_url = f"{url}{destination.stem}/"
+        page_path = preview_path_for_doc(destination)
+        page_url = f"{url}{page_path}/" if page_path else url
         print(f"preview_url={page_url}")
         if not args.no_open:
             open_url(page_url)

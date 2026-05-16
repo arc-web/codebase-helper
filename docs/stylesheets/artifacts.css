@@ -1,0 +1,60 @@
+.md-typeset {
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.md-typeset h1 {
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.md-typeset h2 {
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  margin-top: 2.2rem;
+  padding-top: 1.2rem;
+}
+
+.md-typeset table:not([class]) {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.35rem;
+  display: table;
+  width: 100%;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color);
+  font-weight: 700;
+}
+
+.md-typeset table:not([class]) td,
+.md-typeset table:not([class]) th {
+  vertical-align: top;
+}
+
+.artifact-meta {
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-left: 0.22rem solid var(--md-accent-fg-color);
+  border-radius: 0.35rem;
+  color: var(--md-default-fg-color);
+  margin: 2rem 0 0;
+  padding: 0.85rem 1rem;
+}
+
+.artifact-meta p {
+  margin: 0.25rem 0;
+}
+
+.artifact-meta code {
+  word-break: break-word;
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 0.35rem;
+}
+
+.md-typeset pre > code {
+  white-space: pre-wrap;
+}
