@@ -1,4 +1,4 @@
-# Project Management Category + plane-pm-agent Move + Swarm Program Skill
+# Project Management Category + plane_agent Move + Swarm Program Skill
 
 > **Plan file note**: harness pre-filled slug `witty-roaming-hoare.md`. After approval, rename via `mv` to `projectmanagement_category_and_plane_pm_agent.md` per memory rule `feedback_plan_naming.md`.
 
@@ -9,16 +9,17 @@
 We need a reusable system for the workflow we ran manually during the Path to Launch task today. That workflow created 66 Plane tasks in a parent/child tree, polished them with priority + labels + dates, and updated 3 doc files. Ad-hoc Python script. No reuse path. Next program would have to recreate the whole thing by hand.
 
 **What exists today**:
-- `~/ai/agents/web/plane_agent/` - polished Python `plane` CLI (OpenBao auth, caching, retry, output formats). Self-contained, has its own `.git` but no GitHub remote. SOP.md explicitly flags the gap: "Subtasks/parent links not surfaced in CLI yet."
-- `~/ai/apps/products/project-management-agent/` - DRY-unified merger of client_director + project_management_agent. Supabase-backed sprint/task tracker with templates (MCP/Voice AI/CRM). NOT Plane-connected. Has GitHub remote `arc-web/project-management-agent` (private, "Task management system: projects, sprints, tasks CLI + Vite dashboard. Work-in-progress.").
+- `~/ai/agents/projectmanagement/plane_agent/` - polished Python `plane` CLI (OpenBao auth, caching, retry, output formats). Self-contained repo with GitHub remote `arc-web/plane-pm-agent`.
+- `~/ai/agents/projectmanagement/project-management-agent/` - DRY-unified merger of client_director + project_management_agent. Supabase-backed sprint/task tracker with templates (MCP/Voice AI/CRM). NOT Plane-connected. Has GitHub remote `arc-web/project-management-agent` (private, "Task management system: projects, sprints, tasks CLI + Vite dashboard. Work-in-progress.").
 - `~/.claude/skills/plane-pm/SKILL.md` - basic Plane API reference. No parent/child, no bulk, no plan-parser.
 
 **What you decided** (this turn):
-- Locally, both PM-related repos should live under a new `agents/projectmanagement/` category.
-- Plane CLI agent should be called `plane-pm-agent` (renamed from `plane_agent`).
+- Locally, both PM-related repos should live under the `~/ai/agents/projectmanagement/` category directory.
+- `arc-web/project-management-agent` should live at `~/ai/agents/projectmanagement/project-management-agent/`.
+- Plane CLI agent should keep the local folder name `plane_agent`; its GitHub repo is `arc-web/plane-pm-agent`.
 - Existing `arc-web/project-management-agent` GitHub repo is kept (you want to maintain it).
 
-**The constraint**: per your directory law (CLAUDE.md line 17), each agent is a self-contained repo. No monorepo. So the category is filesystem grouping only - each agent inside stays its own repo with its own remote.
+**The constraint**: per your directory law (CLAUDE.md line 17), each agent is a self-contained repo. No monorepo. The `projectmanagement/` directory is filesystem grouping only; each child stays its own repo with its own remote.
 
 **Intended outcome**: any future multi-agent program ("Path to Launch v2", "Path to Launch for some-other-agent", etc.) can be enacted by saying `/swarm-program <plan-file>` and ending up with a complete Plane task tree, polished + linked + ready for agents to claim.
 
@@ -39,19 +40,19 @@ We need a reusable system for the workflow we ran manually during the Path to La
 After this plan executes:
 
 ```
-~/ai/agents/projectmanagement/              <- NEW category dir
-   plane-pm-agent/                          <- moved from agents/web/plane_agent/
-      plane                                 (existing CLI, gains `tree` subcommands)
-      SOP.md                                (updated with tree section)
-      README.md                             (updated with new path + tree usage)
-      .git/                                 (existing local git, gains remote)
-   project-management-agent/                <- moved from apps/products/
+~/ai/agents/projectmanagement/              <- category dir
+   plane_agent/                             <- moved out of the web agent category
+      plane                                 (existing CLI, gains `tree` subcommands later)
+      SOP.md                                (operational SOP)
+      README.md                             (updated with new path)
+      .git/                                 (remote: arc-web/plane-pm-agent)
+   project-management-agent/                <- existing arc-web/project-management-agent repo
       core/, cli/, apps/, gui/              (existing structure)
-      pyproject.toml, README.md             (paths updated)
-      .git/                                 (existing remote: arc-web/project-management-agent)
+      pyproject.toml, README.md             (paths updated if needed)
+      .git/                                 (remote: arc-web/project-management-agent)
 
 GitHub:
-   arc-web/plane-pm-agent                   <- NEW private repo
+   arc-web/plane-pm-agent                   <- private repo for local plane_agent
    arc-web/project-management-agent         <- unchanged (already exists)
 
 ~/.claude/skills/
@@ -64,18 +65,17 @@ GitHub:
 
 ## 4. Plan Steps (in order)
 
-### Step 1 - Create category + move plane-pm-agent
+### Step 1 - Create category + move plane_agent
 
 ```bash
 mkdir -p ~/ai/agents/projectmanagement
-git mv ~/ai/agents/web/plane_agent ~/ai/agents/projectmanagement/plane-pm-agent
+ls ~/ai/agents/projectmanagement/plane_agent
 ```
 
 Wait - `plane_agent` has its own `.git` repo, it's not tracked by a parent. So `git mv` is a no-op as far as the parent tree goes. Use `mv` for the directory move, then update its internal git references:
 
 ```bash
-mv ~/ai/agents/web/plane_agent ~/ai/agents/projectmanagement/plane-pm-agent
-cd ~/ai/agents/projectmanagement/plane-pm-agent
+cd ~/ai/agents/projectmanagement/plane_agent
 # Update README path references
 # Verify CLI still works after move
 ```
@@ -84,13 +84,13 @@ The CLI binary symlink (if installed) needs re-pointing:
 
 ```bash
 ls -la ~/.local/bin/plane 2>/dev/null   # confirm symlink target
-ln -sf ~/ai/agents/projectmanagement/plane-pm-agent/plane ~/.local/bin/plane
+ln -sf ~/ai/agents/projectmanagement/plane_agent/plane ~/.local/bin/plane
 ```
 
-### Step 2 - Create GitHub repo for plane-pm-agent
+### Step 2 - Create GitHub repo for plane_agent
 
 ```bash
-cd ~/ai/agents/projectmanagement/plane-pm-agent
+cd ~/ai/agents/projectmanagement/plane_agent
 /opt/homebrew/bin/gh repo create arc-web/plane-pm-agent --private \
   --description "Plane CE CLI + swarm-program orchestration. Lives under agents/projectmanagement."
 git remote add origin git@github.com:arc-web/plane-pm-agent.git
@@ -100,8 +100,9 @@ git push -u origin main
 ### Step 3 - Move existing project-management-agent under category
 
 ```bash
-mv ~/ai/apps/products/project-management-agent ~/ai/agents/projectmanagement/project-management-agent
-cd ~/ai/agents/projectmanagement/project-management-agent
+mv ~/ai/agents/projectmanagement ~/ai/agents/.projectmanagement-repo-moving
+mkdir -p ~/ai/agents/projectmanagement
+mv ~/ai/agents/.projectmanagement-repo-moving ~/ai/agents/projectmanagement/project-management-agent
 # Remote arc-web/project-management-agent stays unchanged
 # Internal .git tracking is unchanged
 ```
@@ -110,7 +111,7 @@ Update path refs inside that repo if needed (most code uses relative paths).
 
 ### Step 4 - Extend plane-pm-agent CLI with tree subcommands
 
-Edit `~/ai/agents/projectmanagement/plane-pm-agent/plane` (single Python file). Add commands:
+Edit `~/ai/agents/projectmanagement/plane_agent/plane` (single Python file). Add commands:
 
 | Command | What it does |
 |---|---|
@@ -164,9 +165,9 @@ Files to update:
 
 | File | Update |
 |---|---|
-| `/Users/home/ai/apps/products/todovibes/CLAUDE.md` | Replace path refs: `~/ai/agents/web/plane_agent/` -> `~/ai/agents/projectmanagement/plane-pm-agent/`. Replace `~/ai/apps/products/project-management-agent/` -> `~/ai/agents/projectmanagement/project-management-agent/`. Add cross-ref to swarm-program skill. |
-| `~/ai/agents/projectmanagement/plane-pm-agent/SOP.md` | Add new section "Tree commands" documenting `plane tree create/polish/status/resume/verify`. Remove the "Subtasks/parent links not surfaced" gap from Known Gaps. |
-| `~/ai/agents/projectmanagement/plane-pm-agent/README.md` | Update path in Setup section. Add tree commands table. |
+| `/Users/home/ai/apps/products/todovibes/CLAUDE.md` | Ensure project-management-agent references point to `~/ai/agents/projectmanagement/project-management-agent/`. Add cross-ref to swarm-program skill if still relevant. |
+| `~/ai/agents/projectmanagement/plane_agent/SOP.md` | Add new section "Tree commands" documenting `plane tree create/polish/status/resume/verify` when those commands are implemented. Remove the "Subtasks/parent links not surfaced" gap then. |
+| `~/ai/agents/projectmanagement/plane_agent/README.md` | Update path in Setup section. Add tree commands table when those commands are implemented. |
 | `~/.claude/CLAUDE.md` (Domain rules table) | Add row: `Plane swarm program (build a multi-agent task tree from a plan) -> ~/.claude/skills/swarm-program/SKILL.md`. |
 | `~/ai/apps/products/todovibes/evaluations/plane/plane-agent-context.md` | Already has pointer to canonical rules. Just update the agent path. |
 | `~/ai/agents/comms/discord_agent/docs/plane_team_onboarding_runbook.md` | Path refs updated. |
@@ -219,26 +220,28 @@ plane tree delete <root_seq>   # optional, or leave as evidence
 ## 5. Critical Files Map
 
 **Read** (not modified):
-- `~/ai/agents/web/plane_agent/plane` (CLI source, ~600 lines)
-- `~/ai/agents/web/plane_agent/SOP.md`
-- `~/ai/agents/web/plane_agent/README.md`
-- `~/ai/apps/products/project-management-agent/DECOMPOSE.md`
+- `~/ai/agents/projectmanagement/plane_agent/plane` (CLI source, ~600 lines)
+- `~/ai/agents/projectmanagement/plane_agent/SOP.md`
+- `~/ai/agents/projectmanagement/plane_agent/README.md`
+- `~/ai/agents/projectmanagement/project-management-agent/DECOMPOSE.md`
 - `/Users/home/.claude/plans/google_ads_agent_production_readiness_program.md` (template for what a "plan" looks like in our system)
 
 **Moved** (filesystem `mv`):
-- `~/ai/agents/web/plane_agent/` -> `~/ai/agents/projectmanagement/plane-pm-agent/`
-- `~/ai/apps/products/project-management-agent/` -> `~/ai/agents/projectmanagement/project-management-agent/`
+- former web-category Plane CLI repo -> `~/ai/agents/projectmanagement/plane_agent/`
+- `~/ai/agents/projectmanagement/` repo root -> `~/ai/agents/projectmanagement/project-management-agent/`
 
 **Edited**:
-- `~/ai/agents/projectmanagement/plane-pm-agent/plane` (add tree subcommands)
-- `~/ai/agents/projectmanagement/plane-pm-agent/SOP.md` (add Tree commands section, drop Known Gap)
-- `~/ai/agents/projectmanagement/plane-pm-agent/README.md` (update paths + add tree table)
+- `~/ai/agents/projectmanagement/plane_agent/plane` (add tree subcommands later)
+- `~/ai/agents/projectmanagement/plane_agent/SOP.md` (add Tree commands section later, drop Known Gap then)
+- `~/ai/agents/projectmanagement/plane_agent/README.md` (update paths now, add tree table later)
 - `~/.claude/CLAUDE.md` (add domain row for swarm-program skill)
 - `/Users/home/ai/apps/products/todovibes/CLAUDE.md` (path refs + skill pointer)
 - `~/ai/agents/comms/discord_agent/docs/plane_team_onboarding_runbook.md` (path refs)
 
 **Created**:
-- `~/ai/agents/projectmanagement/` (new category dir)
+- `~/ai/agents/projectmanagement/` (category dir)
+- `~/ai/agents/projectmanagement/project-management-agent/` (moved repo path)
+- `~/ai/agents/projectmanagement/plane_agent/` (moved repo path)
 - `~/ai/tools/ai/claude-skills/swarm-program/SKILL.md` (new skill, symlinked into `~/.claude/skills/`)
 - New private GitHub repo: `arc-web/plane-pm-agent`
 
@@ -251,8 +254,8 @@ plane tree delete <root_seq>   # optional, or leave as evidence
 ## 6. Reused Existing Code
 
 From the exploration:
-- **OpenBao token retrieval** (`~/ai/agents/web/plane_agent/plane` lines 31-52 in CLI). Reuse for tree commands.
-- **HTTP retry with backoff** (`~/ai/agents/web/plane_agent/plane` lines 56-82). Reuse for bulk operations.
+- **OpenBao token retrieval** (`~/ai/agents/projectmanagement/plane_agent/plane` lines 31-52 in CLI). Reuse for tree commands.
+- **HTTP retry with backoff** (`~/ai/agents/projectmanagement/plane_agent/plane` lines 56-82). Reuse for bulk operations.
 - **Cache pattern** (`~/.cache/plane-cli/`). Extend with `trees/` subdir for state files.
 - **Plan markdown structure** (`/Users/home/.claude/plans/google_ads_agent_production_readiness_program.md` Section 0 + Section 5). Use as template the parser keys off of.
 - **Python create + PATCH pattern** (`~/.claude/skills/plane-pm/SKILL.md` lines 78-127). Same auth + headers + payload shape.
@@ -264,7 +267,7 @@ From the exploration:
 
 Two small decisions before Step 1:
 
-1. **CLI binary name**: keep `plane` as the command name (you type `plane projects`) even though the dir is renamed `plane-pm-agent`. Yes / no.
+1. **CLI binary name**: keep `plane` as the command name (you type `plane projects`) even though the remote repo is named `plane-pm-agent`. Yes / no.
 2. **Skill location**: skill lives in `arc-web/claude-skills` (the symlinked skill dir). Auto-commits per memory rule. Confirm or change.
 
 Defaults shown are recommendations. If you approve without choosing, I take the defaults.
@@ -277,13 +280,13 @@ After all 7 steps complete:
 
 1. `which plane` -> resolves to symlink pointing at new path.
 2. `plane projects` -> works (cache + token still fine).
-3. `ls ~/ai/agents/projectmanagement/` -> shows `plane-pm-agent/` and `project-management-agent/`.
-4. `ls ~/ai/agents/web/` -> no `plane_agent/` (moved out).
-5. `ls ~/ai/apps/products/` -> no `project-management-agent/` (moved out).
+3. `ls ~/ai/agents/projectmanagement/` -> shows `plane_agent/` and `project-management-agent/`.
+4. `git -C ~/ai/agents/projectmanagement/project-management-agent remote -v` -> shows `arc-web/project-management-agent`.
+5. `ls ~/ai/agents/web/` -> no `plane_agent/` (moved out).
 6. `gh repo view arc-web/plane-pm-agent` -> exists, private.
 7. `gh repo view arc-web/project-management-agent` -> still exists, unchanged.
-8. `plane tree status 231` -> reports 66 task states.
-9. `/swarm-program /tmp/test_plan.md` in a fresh session -> end-to-end works, creates a test tree.
+8. `plane tree status 231` -> reports 66 task states after tree commands are implemented.
+9. `/swarm-program /tmp/test_plan.md` in a fresh session -> end-to-end works after the skill is implemented.
 10. The doc updates (CLAUDE.md, SOP.md, README.md, onboarding runbook) all point at the new paths.
 
 If any of those 10 checks fail, the plan is not done. Each one is a hard gate.
