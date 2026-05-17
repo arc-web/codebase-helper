@@ -37,6 +37,9 @@ Render and open a Markdown file:
 python3 scripts/preview_markdown.py path/to/note.md
 ```
 
+This is the default HTML preview path. It opens a localhost MkDocs Material page
+with site navigation and top-right controls.
+
 Render without opening a browser:
 
 ```bash
@@ -66,7 +69,8 @@ The script records rendered pages in `docs/artifacts/index.md` unless
 `--skip-gallery` is used. It also runs static checks after the strict MkDocs
 build unless `--skip-checks` is used.
 
-Render a standalone styled HTML document without adding it to the MkDocs site:
+Render a standalone styled HTML document without adding it to the MkDocs site
+only when a standalone finished document is explicitly requested:
 
 ```bash
 python3 scripts/render_styled.py docs/supabase-visual-reference-research.md --output /tmp/codebase-helper-supabase-reference.html --no-open

@@ -242,7 +242,29 @@ def read_manifest() -> list[dict[str, str]]:
     data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     if not isinstance(data, list):
         return []
-    return [item for item in data if isinstance(item, dict)]
+    return [normalize_manifest_item(item) for item in data if isinstance(item, dict)]
+
+
+def normalize_manifest_item(item: dict[str, str]) -> dict[str, str]:
+    normalized = dict(item)
+    source = normalized.get("source")
+    docs_page = normalized.get("docs_page")
+    if not source or not docs_page:
+        return normalized
+
+    source_path = Path(source)
+    try:
+        source_path.relative_to(PROJECT_ROOT)
+    except ValueError:
+        return normalized
+
+    if source_path.exists():
+        return normalized
+
+    docs_source = DOCS_DIR / docs_page
+    if docs_source.exists():
+        normalized["source"] = docs_source.resolve().as_posix()
+    return normalized
 
 
 def write_manifest(items: list[dict[str, str]]) -> None:

@@ -12,6 +12,10 @@ preview site. Preserve Markdown as the source of truth. Do not hand-convert
 Markdown into custom HTML unless the user explicitly asks for a standalone
 custom HTML implementation.
 
+When a user asks to open a Markdown file in HTML, use this MkDocs preview
+surface. The expected output is a localhost MkDocs Material page with site
+navigation and top-right controls.
+
 The v2 helper also supports artifact presets through
 `scripts/preview_markdown.py --preset <name>`. Available presets are `note`,
 `handoff`, `repo-walkthrough`, `implementation-summary`, and `review-packet`.
@@ -19,9 +23,10 @@ The script updates `docs/artifacts/index.md` and runs static checks by default.
 Because preview runs mutate repo files, the script refuses to run on an already
 dirty Git baseline unless `--allow-dirty-baseline` is passed intentionally.
 
-Use `scripts/render_styled.py` only when the user asks for a standalone styled
-HTML or PDF artifact outside the MkDocs preview site. Write temporary outputs
-under `/tmp` during tests.
+Do not use `scripts/render_styled.py` for ordinary preview requests.
+Use it only when the user explicitly asks for a standalone styled HTML or PDF
+artifact outside the MkDocs preview site. Write temporary outputs under `/tmp`
+during tests.
 
 ## Default Workflow
 
