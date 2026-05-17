@@ -44,6 +44,12 @@ python3 scripts/preview_markdown.py path/to/note.md
 Opens a localhost MkDocs Material page with site navigation and top-right
 controls.
 
+When the Markdown source is outside `codebase_helper`, the script now renders
+it as a transient preview under `.cache/transient-previews/` and leaves the
+owning repository as the source of truth. It does not copy the external page
+into `docs/`, update `mkdocs.yml`, or add it to the artifact gallery unless
+you explicitly pass `--persist-external`.
+
 Without opening a browser:
 
 ```bash
@@ -60,6 +66,8 @@ Preview runs mutate `mkdocs.yml`, copied pages under `docs/`,
 `docs/artifacts/index.md`, and `.cache/artifacts.json`. By default the helper
 refuses to run when the Git worktree is already dirty. Use
 `--allow-dirty-baseline` only when those existing changes are intentional.
+This mutation model applies to helper-owned persisted previews. External
+source files default to transient cache previews.
 
 Available presets:
 

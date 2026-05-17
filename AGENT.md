@@ -27,11 +27,15 @@ in html" with no name, use the default.
 
 ## Default Workflow (mkdocs-preview)
 
-1. Copy the requested Markdown file into `docs/`.
-2. Add the page to `mkdocs.yml` navigation when it is not already present.
-3. Run `mkdocs build --strict`.
-4. Start or reuse the local MkDocs server.
-5. Open the preview URL with `open <local-url>`.
+1. If the requested Markdown file is outside this repo, render it as a
+   transient preview under `.cache/transient-previews/` so the source stays in
+   the owning repo.
+2. If the requested Markdown file belongs to `codebase_helper`, copy or update
+   it in `docs/`.
+3. Add the page to `mkdocs.yml` navigation when it is not already present.
+4. Run `mkdocs build --strict`.
+5. Start or reuse the local MkDocs server.
+6. Open the preview URL with `open <local-url>`.
 
 Browser automation (Playwright, etc.) is only for inspection / interaction /
 screenshots / DOM checks / automated verification, never for the default
@@ -42,6 +46,9 @@ preview path.
 - This agent renders Markdown. It does not author content, run audits, or
   produce client-facing campaign reports - that work lives in
   `~/ai/agents/ppc/google_ads_agent/shared/presentation/`.
+- This repo is not the home for another agent's documents. External Markdown
+  remains in its owning repository. Use transient previews for external docs
+  unless the user explicitly asks to add a generic example to `codebase_helper`.
 - A new renderer ships as a new script under `scripts/` plus a row in
   `RENDERERS.md`. Do not bolt new file types onto existing renderers; add a
   named version instead.
@@ -55,6 +62,8 @@ preview path.
 - The preview script verifies generated HTML exists, the page title is
   present, local source links are not broken, and any reused server is
   serving `Codebase Helper`.
-- The preview script refuses to run on an already-dirty Git baseline unless
-  `--allow-dirty-baseline` is passed intentionally; preview mutates `docs/`,
-  `mkdocs.yml`, and `docs/artifacts/index.md`.
+- For helper-owned persisted previews, the preview script refuses to run on an
+  already-dirty Git baseline unless `--allow-dirty-baseline` is passed
+  intentionally. Persisted previews mutate `docs/`, `mkdocs.yml`, and
+  `docs/artifacts/index.md`. Transient previews write only ignored cache
+  output.

@@ -21,6 +21,11 @@ When user says "open in html" with no other qualifier, use `mkdocs-preview`.
 That is the original mission: interactive websites for visual review of
 complex topics.
 
+For Markdown outside this repository, `mkdocs-preview` uses a transient cache
+site by default. It should render another repo's document without making that
+document part of `codebase_helper`. Use `--persist-external` only when the
+user explicitly wants to add a generic, reusable example to this repo.
+
 ## Naming convention for future renderers
 
 Add a row to this table whenever you add a new renderer. Pick a short
