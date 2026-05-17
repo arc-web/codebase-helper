@@ -8,7 +8,7 @@ downstream view.
 
 ## Renderers
 
-See `RENDERERS.md` for the canonical list. Two renderers ship today:
+See `RENDERERS.md` for the canonical list. Three renderers ship today:
 
 - `mkdocs-preview` (default) - interactive MkDocs Material site for searchable
   multi-page review. Use this for "open in html" when no other qualifier is
@@ -16,6 +16,10 @@ See `RENDERERS.md` for the canonical list. Two renderers ship today:
 - `styled-doc` - single-file styled HTML (+ optional PDF) for a finished
   document. Use only when the user asks for a standalone artifact, a
   print/send-ready doc, or a one-file deliverable.
+- `system-map` - interactive graph HTML for visualizing data relationships,
+  project workflows, agents, scripts, triggers, approvals, and if/then
+  branches. Use it when the user asks for a visual system layout or names
+  `system-map`.
 
 When the user says "open in html as <name>" or "render with <name>", look up
 that name in `RENDERERS.md` and run the matching script. When they say "open

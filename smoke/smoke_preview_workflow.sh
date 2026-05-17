@@ -59,8 +59,10 @@ rm -f docs/smoke-dirty-baseline.md .cache/dirty-baseline-guard.err
 python3 scripts/preview_markdown.py smoke/fixtures/sample-preview.md --slug smoke-preview --title "Smoke Preview" --build-only
 python3 scripts/preview_markdown.py smoke/fixtures/handoff-sample.md --preset handoff --slug handoff-sample --title "Handoff Sample" --build-only --allow-dirty-baseline
 python3 scripts/preview_markdown.py smoke/fixtures/repo-walkthrough-sample.md --preset repo-walkthrough --slug repo-walkthrough-sample --title "Repo Walkthrough Sample" --build-only --allow-dirty-baseline
+python3 scripts/render_system_map.py docs/agent-system-map-sample.md --output /tmp/codebase-helper-agent-system-map-smoke.html --no-open
 test -f site/index.html
 test -f site/learning-example/index.html
 test -f site/smoke-preview/index.html
 test -f site/handoff-sample/index.html
 test -f site/repo-walkthrough-sample/index.html
+test -s /tmp/codebase-helper-agent-system-map-smoke.html

@@ -4,13 +4,16 @@ Codebase Helper renders Markdown into interactive websites and finished
 documents for visual review of complex topics. Markdown stays the source of
 truth; every renderer is a downstream view.
 
-The canonical list of renderers lives in `RENDERERS.md`. Two ship today:
+The canonical list of renderers lives in `RENDERERS.md`. Three ship today:
 
 - **`mkdocs-preview`** (default) - interactive Material for MkDocs site on
   `127.0.0.1:8012`. Searchable, multi-page, navigable. This is the original
   mission and the default for "open in html".
 - **`styled-doc`** - single-file styled HTML (+ optional PDF) saved to
   `~/Desktop/`. Use only when a standalone, send-ready document is needed.
+- **`system-map`** - interactive graph HTML saved to `~/Desktop/`. Use for
+  visualizing schemas, project flows, agents, scripts, triggers, and if/then
+  logic.
 
 ## Common Commands
 
@@ -90,6 +93,25 @@ Other flags: `--output PATH`, `--title "..."`, `--subtitle "..."`, `--no-open`.
 temporary previews, write outputs under `/tmp` so standalone artifacts do not
 become repo state.
 
+### Visual renderer: `system-map`
+
+Interactive graph HTML, written to `~/Desktop/` and opened in the browser:
+
+```bash
+scripts/render_system_map.py docs/agent-system-map-sample.md
+```
+
+Test without opening:
+
+```bash
+scripts/render_system_map.py docs/agent-system-map-sample.md --output /tmp/codebase-helper-agent-system-map.html --no-open
+```
+
+The source Markdown owns the map data in a fenced `system-map`, `json`, or
+`yaml` block. Use this renderer for database relationships, project workflows,
+agent collaboration maps, script chains, triggers, approval gates, and
+if/then branches.
+
 ## Adding a new renderer
 
 See `RENDERERS.md`. Each renderer is one script under `scripts/`, one row in
@@ -102,6 +124,8 @@ new output formats; add a named version.
 - Package handoffs as searchable context packets.
 - Convert repo walkthroughs into review-friendly pages.
 - Produce a single styled file to send a client or stakeholder.
+- Render visual maps for data relationships, project flows, agents, scripts,
+  triggers, and decision branches.
 
 ## Audit Notes
 
