@@ -2,45 +2,55 @@
 
 ## Role
 
-Codebase Helper turns codebase work into clear, navigable artifacts for humans
-and other agents.
+Render Markdown into interactive websites and finished documents for visual
+review of complex topics. Markdown is the source of truth; every renderer is a
+downstream view.
 
-## Current Capability
+## Renderers
 
-Use Material for MkDocs to render Markdown files into an interactive local HTML
-preview site. Preserve Markdown as the source of truth. Do not hand-convert
-Markdown into custom HTML unless the user explicitly asks for a standalone
-custom HTML implementation.
+See `RENDERERS.md` for the canonical list. Two renderers ship today:
 
-When a user asks to open a Markdown file in HTML, use this MkDocs preview
-surface. The expected output is a localhost MkDocs Material page with site
-navigation and top-right controls.
+- `mkdocs-preview` (default) - interactive MkDocs Material site for searchable
+  multi-page review. Use this for "open in html" when no other qualifier is
+  given.
+- `styled-doc` - single-file styled HTML (+ optional PDF) for a finished
+  document. Use only when the user asks for a standalone artifact, a
+  print/send-ready doc, or a one-file deliverable.
 
-The v2 helper also supports artifact presets through
-`scripts/preview_markdown.py --preset <name>`. Available presets are `note`,
-`handoff`, `repo-walkthrough`, `implementation-summary`, and `review-packet`.
-The script updates `docs/artifacts/index.md` and runs static checks by default.
-Because preview runs mutate repo files, the script refuses to run on an already
-dirty Git baseline unless `--allow-dirty-baseline` is passed intentionally.
+When the user says "open in html as <name>" or "render with <name>", look up
+that name in `RENDERERS.md` and run the matching script. When they say "open
+in html" with no name, use the default.
 
-Do not use `scripts/render_styled.py` for ordinary preview requests.
-Use it only when the user explicitly asks for a standalone styled HTML or PDF
-artifact outside the MkDocs preview site. Write temporary outputs under `/tmp`
-during tests.
-
-## Default Workflow
+## Default Workflow (mkdocs-preview)
 
 1. Copy the requested Markdown file into `docs/`.
 2. Add the page to `mkdocs.yml` navigation when it is not already present.
 3. Run `mkdocs build --strict`.
-4. Start or reuse a local MkDocs server.
+4. Start or reuse the local MkDocs server.
 5. Open the preview URL with `open <local-url>`.
 
-Use browser automation only when the user asks for inspection, interaction,
-screenshots, DOM checks, or automated verification.
+Browser automation (Playwright, etc.) is only for inspection / interaction /
+screenshots / DOM checks / automated verification, never for the default
+preview path.
+
+## Scope guardrails
+
+- This agent renders Markdown. It does not author content, run audits, or
+  produce client-facing campaign reports - that work lives in
+  `~/ai/agents/ppc/google_ads_agent/shared/presentation/`.
+- A new renderer ships as a new script under `scripts/` plus a row in
+  `RENDERERS.md`. Do not bolt new file types onto existing renderers; add a
+  named version instead.
+- Shared visual assets live in `assets/`. Shared utilities should live in
+  `scripts/_lib/` if reuse emerges; do not factor prematurely.
 
 ## Quality Checks
 
-Keep `mkdocs build --strict` in the workflow. The preview script also verifies
-that generated HTML exists, the page title is present, local source links are
-not broken, and a reused server is actually serving `Codebase Helper`.
+- `mkdocs build --strict` is mandatory before serving any `mkdocs-preview`
+  output.
+- The preview script verifies generated HTML exists, the page title is
+  present, local source links are not broken, and any reused server is
+  serving `Codebase Helper`.
+- The preview script refuses to run on an already-dirty Git baseline unless
+  `--allow-dirty-baseline` is passed intentionally; preview mutates `docs/`,
+  `mkdocs.yml`, and `docs/artifacts/index.md`.

@@ -1,15 +1,16 @@
 # Codebase Helper
 
-Codebase Helper turns development work into clear, navigable artifacts for
-humans and agents: interactive notes, repo walkthroughs, handoffs,
-implementation summaries, and review-ready context packets.
+Codebase Helper renders Markdown into interactive websites and finished
+documents for visual review of complex topics. Markdown stays the source of
+truth; every renderer is a downstream view.
 
-The first supported workflow is a Material for MkDocs Markdown preview app.
-It renders plain Markdown into a searchable local HTML site while preserving
-the source as Markdown.
+The canonical list of renderers lives in `RENDERERS.md`. Two ship today:
 
-v2 adds artifact presets, a shared visual layer, a local artifact gallery, and
-static checks while keeping the same Markdown-first contract.
+- **`mkdocs-preview`** (default) - interactive Material for MkDocs site on
+  `127.0.0.1:8012`. Searchable, multi-page, navigable. This is the original
+  mission and the default for "open in html".
+- **`styled-doc`** - single-file styled HTML (+ optional PDF) saved to
+  `~/Desktop/`. Use only when a standalone, send-ready document is needed.
 
 ## Common Commands
 
@@ -31,22 +32,22 @@ Preview the current site:
 mkdocs serve -a 127.0.0.1:8012
 ```
 
-Render and open a Markdown file:
+### Default renderer: `mkdocs-preview`
 
 ```bash
 python3 scripts/preview_markdown.py path/to/note.md
 ```
 
-This is the default HTML preview path. It opens a localhost MkDocs Material page
-with site navigation and top-right controls.
+Opens a localhost MkDocs Material page with site navigation and top-right
+controls.
 
-Render without opening a browser:
+Without opening a browser:
 
 ```bash
 python3 scripts/preview_markdown.py path/to/note.md --no-open
 ```
 
-Render a richer handoff artifact:
+Richer artifact preset:
 
 ```bash
 python3 scripts/preview_markdown.py path/to/handoff.md --preset handoff
@@ -69,30 +70,43 @@ The script records rendered pages in `docs/artifacts/index.md` unless
 `--skip-gallery` is used. It also runs static checks after the strict MkDocs
 build unless `--skip-checks` is used.
 
-Render a standalone styled HTML document without adding it to the MkDocs site
-only when a standalone finished document is explicitly requested:
+### Alternate renderer: `styled-doc`
+
+Standalone styled HTML, written to `~/Desktop/` and opened in the browser:
 
 ```bash
-python3 scripts/render_styled.py docs/supabase-visual-reference-research.md --output /tmp/codebase-helper-supabase-reference.html --no-open
+scripts/render_styled.py path/to/doc.md
 ```
 
-`scripts/render_styled.py` uses the root `assets/*.css` files and writes to
-`~/Desktop` by default. For tests and temporary previews, write outputs under
-`/tmp` so standalone artifacts do not become repo state.
+Also export a PDF (Chrome headless):
+
+```bash
+scripts/render_styled.py path/to/doc.md --pdf
+```
+
+Other flags: `--output PATH`, `--title "..."`, `--subtitle "..."`, `--no-open`.
+
+`scripts/render_styled.py` uses the root `assets/*.css` files. For tests and
+temporary previews, write outputs under `/tmp` so standalone artifacts do not
+become repo state.
+
+## Adding a new renderer
+
+See `RENDERERS.md`. Each renderer is one script under `scripts/`, one row in
+`RENDERERS.md`, one kebab-case name. Do not extend an existing renderer with
+new output formats; add a named version.
 
 ## Expected Use Cases
 
 - Turn implementation notes into navigable local HTML.
 - Package handoffs as searchable context packets.
 - Convert repo walkthroughs into review-friendly pages.
-- Keep generated communication artifacts inside this project instead of a home
-  directory prototype.
+- Produce a single styled file to send a client or stakeholder.
 
 ## Audit Notes
 
-The current local HTML tooling inventory lives at
-`docs/html-tooling-inventory.md`. It records the source candidates checked,
-their reuse value, and the v2 direction.
+The local HTML tooling inventory lives at `docs/html-tooling-inventory.md`. It
+records source candidates checked, their reuse value, and the v2 direction.
 
 ## Migration Note
 
