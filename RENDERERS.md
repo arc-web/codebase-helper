@@ -11,6 +11,7 @@ When asking a renderer by name, use the **name** column below.
 | `mkdocs-preview`  | `scripts/preview_markdown.py`   | Local MkDocs Material site (`127.0.0.1:8012`)       | Default. Interactive review of complex topics: search, nav, multi-page. |
 | `styled-doc`      | `scripts/render_styled.py`      | Single-file styled HTML (+ optional PDF) on Desktop | Finished doc to send or print. One self-contained file.                 |
 | `system-map`      | `scripts/render_system_map.py`  | Interactive graph HTML on Desktop                   | Visual maps for schemas, project flows, agents, scripts, triggers, and if/then logic. |
+| `pandoc`          | `scripts/render_pandoc.py`      | Single-file HTML on Desktop (pandoc, standalone)    | Plain, no-framework one-shot Markdown -> HTML. Fully portable file.    |
 
 ## Default
 
