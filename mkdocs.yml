@@ -1,5 +1,7 @@
 site_name: Codebase Helper
 site_description: Markdown previews and navigable codebase communication artifacts.
+extra_css:
+- stylesheets/artifacts.css
 theme:
   name: material
   features:
@@ -15,6 +17,16 @@ theme:
 nav:
 - Home: index.md
 - Learning Example: learning-example.md
+- Artifact Gallery: artifacts/index.md
+- Repair Evidence: codebase-helper-repair-evidence.md
+- 'Plan: Locate the "styled artifact / md → HTML" tool the user recently built': find-md-to-styled-html-tool.md
+- HTML Tooling Inventory: html-tooling-inventory.md
+- Repo Walkthrough Sample: repo-walkthrough-sample.md
+- Handoff Sample: handoff-sample.md
+- System Map Sample: agent-system-map-sample.md
+- Supabase Visual Reference Research: supabase-visual-reference-research.md
+- Plane-GitHub Bridge: plane-github-bridge.md
+- 'Plan: ProjectManagement Category + plane-pm-agent + Swarm Skill': projectmanagement-category-and-plane-pm-agent.md
 markdown_extensions:
 - admonition
 - attr_list

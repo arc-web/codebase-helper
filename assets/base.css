@@ -1,0 +1,197 @@
+/* =============================================================
+   base.css
+
+   Codebase Helper styled-doc renderer. Minimal base typography +
+   the required CSS variables consumed by section_header.css.
+
+   Aesthetic mirrors the client-facing review docs produced by
+   ~/ai/agents/ppc/google_ads_agent/shared/presentation/ - same
+   teal/sage palette, same Inter-style typography, same generous
+   reading width.
+============================================================= */
+
+:root {
+  --teal: #0f6e7d;
+  --teal-dark: #084752;
+  --sage-light: #e6efe9;
+  --sage-dark: #2d5a3d;
+  --muted: #5a6770;
+  --ink: #1a2229;
+  --paper: #fafaf7;
+  --rule: #d6dcd9;
+  --code-bg: #f1f4f2;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 56px 48px 96px;
+}
+
+@media print {
+  body { max-width: none; padding: 32px 40px; }
+}
+
+.doc-meta {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 12px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.doc-title {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--teal-dark);
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.doc-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  margin: 0 0 48px;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin: 40px 0 12px;
+  letter-spacing: -0.005em;
+}
+
+h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 28px 0 10px;
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teal);
+  margin: 20px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+p {
+  margin: 0 0 14px;
+}
+
+ul, ol {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+
+li {
+  margin: 4px 0;
+}
+
+li > ul, li > ol {
+  margin: 4px 0 4px;
+}
+
+strong { color: var(--teal-dark); font-weight: 600; }
+em { font-style: italic; }
+
+a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-decoration-color: rgba(15, 110, 125, 0.35);
+  text-underline-offset: 2px;
+}
+
+a:hover { text-decoration-color: var(--teal); }
+
+code {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 2px 5px;
+  border-radius: 3px;
+  color: var(--teal-dark);
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 14px 18px;
+  border-left: 3px solid var(--teal);
+  border-radius: 0 4px 4px 0;
+  overflow-x: auto;
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--ink);
+}
+
+blockquote {
+  margin: 16px 0;
+  padding: 8px 18px;
+  border-left: 3px solid var(--sage-dark);
+  background: var(--sage-light);
+  color: var(--ink);
+  font-style: italic;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+th {
+  background: var(--sage-light);
+  color: var(--teal-dark);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 32px 0;
+}
+
+.section { margin: 48px 0; }
+
+/* Subtle h1 -> auto-section treatment */
+.section .section-header { margin-top: 0; }
