@@ -1,148 +1,145 @@
 # Codebase Helper
 
-Codebase Helper renders Markdown into interactive websites and finished
-documents for visual review of complex topics. Markdown stays the source of
-truth; every renderer is a downstream view.
+**Turn any Markdown file into a browser-ready interactive artifact in one command.** No manual HTML, no copy-paste into editors, no formatting fights. Write once in Markdown; pick a renderer; open in browser.
 
-The canonical list of renderers lives in `RENDERERS.md`. Three ship today:
+Markdown stays the source of truth. Every renderer is a downstream view that you can regenerate at any time.
 
-- **`mkdocs-preview`** (default) - interactive Material for MkDocs site on
-  `127.0.0.1:8012`. Searchable, multi-page, navigable. This is the original
-  mission and the default for "open in html".
-- **`styled-doc`** - single-file styled HTML (+ optional PDF) saved to
-  `~/Desktop/`. Use only when a standalone, send-ready document is needed.
-- **`system-map`** - interactive graph HTML saved to `~/Desktop/`. Use for
-  visualizing schemas, project flows, agents, scripts, triggers, and if/then
-  logic.
+---
 
-## Common Commands
+## Why use this instead of just opening a .md file
 
-Check the installed MkDocs runtime:
+Raw Markdown in a text viewer is flat, unsearchable, and ugly. What you actually want:
+
+- **Complex docs** → searchable, multi-page, navigable website with a sidebar (30 seconds, not 30 minutes)
+- **SOPs / handoffs** → polished single-file HTML you can email or print to PDF
+- **Workflows, agent maps, pipelines** → interactive node/edge diagram with hover focus and animated connections
+- **Auth flows, credential architectures** → dark-theme identity cards with animated step-by-step flows, policy scope grids, audit log previews
+- **Entity relationships from docs/code** → clickable knowledge graph with clustered communities
+- **Briefings for stakeholders** → animated slide deck with transitions
+- **Everything else** → your choice of 7 renderers, one command each
+
+---
+
+## Renderers
+
+Ask for a visualization and get a lettered menu of options suited to your content. Pick one.
+
+| Renderer | Output | Best for |
+|----------|--------|----------|
+| `mkdocs-preview` | Live local MkDocs Material site | Complex docs, SOPs, multi-page reference, anything needing search + sidebar |
+| `styled-doc` | Single-file HTML + optional PDF on Desktop | Finished documents to send, print, or share |
+| `system-map` | Interactive node/edge graph on Desktop | Workflows, agent maps, data pipelines, approval chains, if/then logic |
+| `arch-viz` | Interactive dark-theme identity flow HTML on Desktop | Auth/credential flows, identity cards, policy scope grids, animated step-by-step |
+| `graphify` | Clustered knowledge graph on Desktop | Entity relationships extracted from prose, docs, or code |
+| `deck` | Animated slide presentation on Desktop | Briefings, walkthroughs, anything shown to an audience sequentially |
+| `pandoc` | Plain portable HTML on Desktop | One-off conversion, no framework, fully self-contained |
+
+Full data shapes and usage in `RENDERERS.md`.
+
+---
+
+## Usage
+
+### Ask for a visualization (menu appears)
+
+When you say "visualize X" without naming a renderer, you get a lettered menu of options suited to the content. Pick one and it runs.
+
+### Run a specific renderer directly
 
 ```bash
-mkdocs --version
-```
-
-Build the current preview site:
-
-```bash
-mkdocs build --strict
-```
-
-Preview the current site:
-
-```bash
-mkdocs serve -a 127.0.0.1:8012
-```
-
-### Default renderer: `mkdocs-preview`
-
-```bash
+# Default: navigable MkDocs site (opens at localhost:8012)
 python3 scripts/preview_markdown.py path/to/note.md
+
+# Polished single-file HTML + PDF
+python3 scripts/render_styled.py path/to/doc.md --pdf
+
+# Interactive workflow/agent diagram
+python3 scripts/render_system_map.py path/to/map.md
+
+# Auth/credential flow visualization
+python3 scripts/render_arch_viz.py path/to/arch.md
+
+# Knowledge graph from docs or code
+python3 scripts/render_graphify.py path/to/content.md
+
+# Slide deck
+python3 scripts/render_deck.py path/to/deck.md
+
+# Plain portable HTML
+python3 scripts/render_pandoc.py path/to/doc.md
 ```
 
-Opens a localhost MkDocs Material page with site navigation and top-right
-controls.
+All renderers share the same flags: `--output PATH`, `--title "..."`, `--no-open`.
 
-When the Markdown source is outside `codebase_helper`, the script now renders
-it as a transient preview under `.cache/transient-previews/` and leaves the
-owning repository as the source of truth. It does not copy the external page
-into `docs/`, update `mkdocs.yml`, or add it to the artifact gallery unless
-you explicitly pass `--persist-external`.
+### External Markdown (from another repo)
 
-Without opening a browser:
+Works without touching the source file:
 
 ```bash
-python3 scripts/preview_markdown.py path/to/note.md --no-open
+python3 scripts/preview_markdown.py ~/ai/other-project/docs/notes.md
 ```
 
-Richer artifact preset:
+Renders as a transient preview under `.cache/` — source stays in the owning repo, nothing gets copied into `codebase_helper`.
+
+---
+
+## Data formats
+
+### `system-map` — embed a fenced block in Markdown
+
+```markdown
+```system-map
+{
+  "title": "My Pipeline",
+  "nodes": [
+    { "id": "ingest", "label": "Ingest", "type": "agent", "lane": "input", "status": "current", "summary": "Pulls raw data" },
+    { "id": "process", "label": "Process", "type": "script", "lane": "core", "status": "current", "summary": "Transforms it" }
+  ],
+  "edges": [
+    { "from": "ingest", "to": "process", "label": "raw data" }
+  ]
+}
+```
+```
+
+### `arch-viz` — embed a fenced block in Markdown
+
+```markdown
+```arch-viz
+{
+  "project": { "title": "My Auth Architecture", "subtitle": "Who can read what" },
+  "identities": [
+    {
+      "id": "agent",
+      "name": "Automated Agent",
+      "icon": "🤖",
+      "authType": "AppRole",
+      "description": "Machine identity with scoped read access",
+      "steps": [ ... ],
+      "policies": { "allow": ["shared/*"], "deny": ["admin/*"] },
+      "auditLog": "role_name=agent | path=secret/data/shared/key | op=read"
+    }
+  ],
+  "flows": [ ... ],
+  "infrastructure": [ { "label": "Vault", "value": "https://vault.example.com" } ]
+}
+```
+```
+
+See `smoke/fixtures/arch-viz-sample.md` for a complete working example.
+
+---
+
+## Smoke test
 
 ```bash
-python3 scripts/preview_markdown.py path/to/handoff.md --preset handoff
+bash smoke/smoke_preview_workflow.sh
 ```
 
-Preview runs mutate `mkdocs.yml`, copied pages under `docs/`,
-`docs/artifacts/index.md`, and `.cache/artifacts.json`. By default the helper
-refuses to run when the Git worktree is already dirty. Use
-`--allow-dirty-baseline` only when those existing changes are intentional.
-This mutation model applies to helper-owned persisted previews. External
-source files default to transient cache previews.
+Runs all renderers, validates output, restores any mutated files. Required before PRs.
 
-Available presets:
+---
 
-- `note`
-- `handoff`
-- `repo-walkthrough`
-- `implementation-summary`
-- `review-packet`
+## Adding a renderer
 
-The script records rendered pages in `docs/artifacts/index.md` unless
-`--skip-gallery` is used. It also runs static checks after the strict MkDocs
-build unless `--skip-checks` is used.
-
-### Alternate renderer: `styled-doc`
-
-Standalone styled HTML, written to `~/Desktop/` and opened in the browser:
-
-```bash
-scripts/render_styled.py path/to/doc.md
-```
-
-Also export a PDF (Chrome headless):
-
-```bash
-scripts/render_styled.py path/to/doc.md --pdf
-```
-
-Other flags: `--output PATH`, `--title "..."`, `--subtitle "..."`, `--no-open`.
-
-`scripts/render_styled.py` uses the root `assets/*.css` files. For tests and
-temporary previews, write outputs under `/tmp` so standalone artifacts do not
-become repo state.
-
-### Visual renderer: `system-map`
-
-Interactive graph HTML, written to `~/Desktop/` and opened in the browser:
-
-```bash
-scripts/render_system_map.py docs/agent-system-map-sample.md
-```
-
-Test without opening:
-
-```bash
-scripts/render_system_map.py docs/agent-system-map-sample.md --output /tmp/codebase-helper-agent-system-map.html --no-open
-```
-
-The source Markdown owns the map data in a fenced `system-map`, `json`, or
-`yaml` block. Use this renderer for database relationships, project workflows,
-agent collaboration maps, script chains, triggers, approval gates, and
-if/then branches.
-
-## Adding a new renderer
-
-See `RENDERERS.md`. Each renderer is one script under `scripts/`, one row in
-`RENDERERS.md`, one kebab-case name. Do not extend an existing renderer with
-new output formats; add a named version.
-
-## Expected Use Cases
-
-- Turn implementation notes into navigable local HTML.
-- Package handoffs as searchable context packets.
-- Convert repo walkthroughs into review-friendly pages.
-- Produce a single styled file to send a client or stakeholder.
-- Render visual maps for data relationships, project flows, agents, scripts,
-  triggers, and decision branches.
-
-## Audit Notes
-
-The local HTML tooling inventory lives at `docs/html-tooling-inventory.md`. It
-records source candidates checked, their reuse value, and the v2 direction.
-
-## Migration Note
-
-This project replaces the prototype previously stored at
-`/Users/home/markdown_html5_lab`. That prototype has not been deleted, so it
-remains available for manual comparison until a separate cleanup decision is
-made.
+One script under `scripts/`, one row in `RENDERERS.md`, one kebab-case name. See `RENDERERS.md` for the full spec. Do not extend an existing renderer; add a new named one.
