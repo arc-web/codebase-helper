@@ -14,12 +14,18 @@ When asking a renderer by name, use the **name** column below.
 | `pandoc`          | `scripts/render_pandoc.py`      | Single-file HTML on Desktop (pandoc, standalone)    | Plain, no-framework one-shot Markdown -> HTML. Fully portable file.    |
 | `deck`            | `scripts/render_deck.py`        | Animated HTML presentation on Desktop (gsap-deck)   | Md/JSON deck source -> animated browser slideshow.                     |
 | `graphify`        | `scripts/render_graphify.py`    | Interactive HTML knowledge graph on Desktop          | Docs/code -> clustered entity+relationship graph (LLM-extracted).      |
+| `arch-viz`        | `scripts/render_arch_viz.py`    | Interactive dark-theme HTML on Desktop               | Auth/credential flows, identity cards, policy scopes, animated flows. Reads `arch-viz` fenced JSON block from Markdown. |
 
 ## Default
 
 When user says "open in html" with no other qualifier, use `mkdocs-preview`.
 That is the original mission: interactive websites for visual review of
 complex topics.
+
+For Markdown outside this repository, `mkdocs-preview` uses a transient cache
+site by default. It should render another repo's document without making that
+document part of `codebase_helper`. Use `--persist-external` only when the
+user explicitly wants to add a generic, reusable example to this repo.
 
 ## Naming convention for future renderers
 

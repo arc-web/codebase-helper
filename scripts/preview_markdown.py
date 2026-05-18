@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import shutil
 import socket
@@ -25,6 +24,7 @@ MKDOCS_CONFIG = PROJECT_ROOT / "mkdocs.yml"
 CACHE_DIR = PROJECT_ROOT / ".cache"
 GALLERY_PATH = DOCS_DIR / "artifacts" / "index.md"
 MANIFEST_PATH = CACHE_DIR / "artifacts.json"
+TRANSIENT_DIR = CACHE_DIR / "transient-previews"
 PRESETS = {
     "note": {
         "label": "Note",
@@ -66,6 +66,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--build-only", action="store_true", help="Build without serving or opening.")
     parser.add_argument("--no-open", action="store_true", help="Do not call macOS open.")
     parser.add_argument(
+        "--transient",
+        action="store_true",
+        help=(
+            "Render in .cache without copying the page into docs/ or updating mkdocs.yml. "
+            "External Markdown sources use this automatically unless --persist-external is set."
+        ),
+    )
+    parser.add_argument(
+        "--persist-external",
+        action="store_true",
+        help="Allow an external Markdown source to be copied into codebase_helper docs/.",
+    )
+    parser.add_argument(
         "--skip-gallery",
         action="store_true",
         help="Do not update docs/artifacts/index.md or the artifact manifest.",
@@ -100,6 +113,14 @@ def source_label(source: Path) -> str:
         return source.resolve().relative_to(Path.home()).as_posix()
     except ValueError:
         return source.resolve().as_posix()
+
+
+def is_inside_project(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(PROJECT_ROOT)
+    except ValueError:
+        return False
+    return True
 
 
 def artifact_header(source: Path, preset: str) -> str:
@@ -181,6 +202,10 @@ def run_build() -> None:
     subprocess.run(["mkdocs", "build", "--strict"], cwd=PROJECT_ROOT, check=True)
 
 
+def run_build_for_config(config_path: Path) -> None:
+    subprocess.run(["mkdocs", "build", "--strict", "-f", str(config_path)], cwd=config_path.parent, check=True)
+
+
 def site_path_for_doc(destination: Path) -> Path:
     rel_path = destination.relative_to(DOCS_DIR)
     if rel_path.name == "index.md":
@@ -212,6 +237,34 @@ def run_static_checks(source: Path, markdown: str, destination: Path, title: str
         errors.append("missing page title")
 
     rendered = site_path_for_doc(destination)
+    if not rendered.is_file():
+        errors.append(f"missing generated HTML: {rendered}")
+    elif rendered.stat().st_size < 500:
+        errors.append(f"generated HTML is unexpectedly small: {rendered}")
+    else:
+        html = rendered.read_text(encoding="utf-8", errors="replace")
+        if title not in html:
+            errors.append(f"generated HTML does not contain title: {title}")
+
+    for target in iter_markdown_links(markdown):
+        target = target.split("#", 1)[0]
+        if not target or target.startswith("#") or is_external_link(target):
+            continue
+        candidate = Path(target).expanduser()
+        if not candidate.is_absolute():
+            candidate = source.parent / candidate
+        if not candidate.exists():
+            errors.append(f"broken source link in {source}: {target}")
+
+    if errors:
+        joined = "\n".join(f"- {error}" for error in errors)
+        raise RuntimeError(f"static checks failed:\n{joined}")
+
+
+def run_rendered_static_checks(source: Path, markdown: str, rendered: Path, title: str) -> None:
+    errors: list[str] = []
+    if not title.strip():
+        errors.append("missing page title")
     if not rendered.is_file():
         errors.append(f"missing generated HTML: {rendered}")
     elif rendered.stat().st_size < 500:
@@ -413,17 +466,151 @@ def start_or_reuse_server(preferred_port: int) -> str:
     raise TimeoutError(f"Timed out waiting for MkDocs server at {url}. See {log_path}")
 
 
+def start_static_server(site_dir: Path, preferred_port: int, title: str) -> str:
+    for port in range(preferred_port, preferred_port + 50):
+        url = f"http://127.0.0.1:{port}/"
+        if port_available(port):
+            CACHE_DIR.mkdir(exist_ok=True)
+            log_path = CACHE_DIR / f"transient-preview-{port}.log"
+            log_handle = log_path.open("ab")
+            process = subprocess.Popen(
+                [
+                    sys.executable,
+                    "-m",
+                    "http.server",
+                    str(port),
+                    "--bind",
+                    "127.0.0.1",
+                    "--directory",
+                    str(site_dir),
+                ],
+                cwd=PROJECT_ROOT,
+                stdout=log_handle,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            (CACHE_DIR / "transient-preview.pid").write_text(str(process.pid), encoding="utf-8")
+            for _ in range(40):
+                if process.poll() is not None:
+                    raise RuntimeError(f"transient preview server exited early. See {log_path}")
+                html = fetch_text(url)
+                if html is not None and title in html:
+                    return url
+                time.sleep(0.25)
+            raise TimeoutError(f"Timed out waiting for transient preview at {url}. See {log_path}")
+
+        html = fetch_text(url)
+        if html is not None and title in html:
+            return url
+
+    raise RuntimeError(f"No available port found starting at {preferred_port}")
+
+
 def open_url(url: str) -> None:
     subprocess.run(["open", url], check=True)
+
+
+def copy_preview_assets(docs_dir: Path) -> None:
+    source_css = DOCS_DIR / "stylesheets" / "artifacts.css"
+    if source_css.exists():
+        target_dir = docs_dir / "stylesheets"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / "artifacts.css").write_text(source_css.read_text(encoding="utf-8"), encoding="utf-8")
+
+
+def build_transient_preview(source: Path, title: str, slug: str, preset: str) -> tuple[Path, Path, str]:
+    preview_root = TRANSIENT_DIR / slug
+    if preview_root.exists():
+        shutil.rmtree(preview_root)
+    preview_docs = preview_root / "docs"
+    preview_docs.mkdir(parents=True, exist_ok=True)
+    copy_preview_assets(preview_docs)
+
+    markdown = source.read_text(encoding="utf-8")
+    destination = preview_docs / "index.md"
+    destination.write_text(prepare_markdown(markdown, source, preset), encoding="utf-8")
+    config = {
+        "site_name": "Codebase Helper Transient Preview",
+        "site_description": "Temporary external Markdown preview. Source stays in its owning repository.",
+        "extra_css": ["stylesheets/artifacts.css"],
+        "theme": {
+            "name": "material",
+            "features": [
+                "navigation.instant",
+                "navigation.sections",
+                "navigation.top",
+                "search.highlight",
+                "search.suggest",
+                "toc.follow",
+                "content.code.copy",
+            ],
+        },
+        "nav": [{title: "index.md"}],
+        "markdown_extensions": [
+            "admonition",
+            "attr_list",
+            "def_list",
+            "footnotes",
+            "md_in_html",
+            "tables",
+            {"toc": {"permalink": True}},
+            "pymdownx.details",
+            {"pymdownx.highlight": {"anchor_linenums": True}},
+            "pymdownx.inlinehilite",
+            "pymdownx.superfences",
+            {"pymdownx.tabbed": {"alternate_style": True}},
+            {"pymdownx.tasklist": {"custom_checkbox": True}},
+        ],
+    }
+    config_path = preview_root / "mkdocs.yml"
+    with config_path.open("w", encoding="utf-8") as handle:
+        yaml.safe_dump(config, handle, sort_keys=False, allow_unicode=True)
+
+    run_build_for_config(config_path)
+    rendered = preview_root / "site" / "index.html"
+    return rendered, preview_root / "site", markdown
+
+
+def run_transient_preview(args: argparse.Namespace, source: Path, title: str, markdown: str | None = None) -> int:
+    slug = slugify(args.slug or source.stem)
+    rendered, site_dir, rendered_markdown = build_transient_preview(source, title, slug, args.preset)
+    markdown = markdown or rendered_markdown
+    if not args.skip_checks:
+        run_rendered_static_checks(source, markdown, rendered, title)
+
+    print(f"source={source}")
+    print(f"transient_root={TRANSIENT_DIR / slug}")
+    print(f"preset={args.preset}")
+    print(f"title={title}")
+    print("mode=transient")
+
+    if args.build_only:
+        return 0
+
+    url = start_static_server(site_dir, args.port, title)
+    print(f"preview_url={url}")
+    if not args.no_open:
+        open_url(url)
+    return 0
 
 
 def main() -> int:
     args = parse_args()
     try:
-        assert_clean_baseline(args.allow_dirty_baseline)
         source = args.source.expanduser().resolve()
+        if not source.exists():
+            raise FileNotFoundError(f"Markdown source does not exist: {source}")
+        if source.suffix.lower() != ".md":
+            raise ValueError(f"Expected a .md file, got: {source}")
+
+        markdown = source.read_text(encoding="utf-8")
+        title = args.title or first_h1(markdown) or source.stem.replace("-", " ").title()
+        external_source = not is_inside_project(source)
+        if args.transient or (external_source and not args.persist_external):
+            return run_transient_preview(args, source, title, markdown)
+
+        assert_clean_baseline(args.allow_dirty_baseline)
         destination, markdown = copy_source(source, args.slug, args.preset)
-        title = args.title or first_h1(markdown) or destination.stem.replace("-", " ").title()
         update_nav(destination, title)
         if not args.skip_gallery:
             update_gallery(source, destination, title, args.preset)
