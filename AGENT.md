@@ -25,43 +25,6 @@ When the user says "open in html as <name>" or "render with <name>", look up
 that name in `RENDERERS.md` and run the matching script. When they say "open
 in html" with no name, use the default.
 
-## Visualization menu (mandatory when renderer not specified)
-
-When the user asks to "visualize", "show visually", "diagram", "map out",
-"create a visual for", or similar — without naming a specific renderer —
-respond with a lettered menu of the options that fit the content. Do NOT
-auto-pick and run. Wait for the user to choose.
-
-Format:
-```
-Which visualization?
-
-a) arch-viz — <one-line fit description>
-b) system-map — <one-line fit description>
-c) graphify — <one-line fit description>
-d) deck — <one-line fit description>
-e) mkdocs-preview — <one-line fit description>
-```
-
-Only include renderers that make sense for the content. Order by best fit
-first. Always include at least 2 options. Descriptions must be specific to
-the user's content, not generic ("identity cards for your 4 auth roles"
-not "interactive dark-theme HTML").
-
-Renderer selection guide:
-- `arch-viz`: auth flows, credential architectures, identity/access patterns,
-  anything with entities + animated step-by-step flows + policy scopes
-- `system-map`: node/edge diagrams — agents, scripts, triggers, workflows,
-  data pipelines, schema relationships, approval chains
-- `graphify`: entity-relationship knowledge graphs extracted from docs or
-  code — best when the content is prose-heavy or has many cross-references
-- `deck`: presentations, slide decks, briefings, anything meant to be shown
-  to an audience sequentially
-- `mkdocs-preview`: complex multi-page content, SOPs, reference docs,
-  anything that benefits from search + sidebar navigation
-- `styled-doc`: finished polished document to send or print (PDF-ready)
-- `pandoc`: plain one-off HTML with no framework, fully portable
-
 ## Default Workflow (mkdocs-preview)
 
 1. If the requested Markdown file is outside this repo, render it as a
