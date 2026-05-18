@@ -6,4 +6,5 @@ __pycache__/
 *.py[cod]
 .DS_Store
 graphify-out/
-docs/assets/
+docs/assets/*
+!docs/assets/screenshots/

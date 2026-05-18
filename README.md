@@ -1,145 +1,130 @@
 # Codebase Helper
 
-**Turn any Markdown file into a browser-ready interactive artifact in one command.** No manual HTML, no copy-paste into editors, no formatting fights. Write once in Markdown; pick a renderer; open in browser.
+> "We need a way to visualize all of the work of the agents and we just
+> can't consume it fast enough through paragraphs of text."
 
-Markdown stays the source of truth. Every renderer is a downstream view that you can regenerate at any time.
+Codebase Helper turns Markdown into shapes a human can actually read:
+searchable sites, finished docs, animated decks, system maps, knowledge
+graphs. The source of truth stays Markdown. Every renderer is a
+downstream view.
 
----
+## The problem
 
-## Why use this instead of just opening a .md file
+Agents produce walls of text. Plans, summaries, handoffs, audits. You
+read 10-20% of it, skim the rest, and the parts you skipped quietly
+start perpetuating bugs - "dual hallucination", where the agent is
+confidently wrong and you're confidently not paying attention. It shows
+up most in plan mode: the plan sounds fine if you read fast, but the
+nuance that breaks it lives in the part you scrolled past.
 
-Raw Markdown in a text viewer is flat, unsearchable, and ugly. What you actually want:
+The fix isn't more text. It's the right shape for the work:
 
-- **Complex docs** → searchable, multi-page, navigable website with a sidebar (30 seconds, not 30 minutes)
-- **SOPs / handoffs** → polished single-file HTML you can email or print to PDF
-- **Workflows, agent maps, pipelines** → interactive node/edge diagram with hover focus and animated connections
-- **Auth flows, credential architectures** → dark-theme identity cards with animated step-by-step flows, policy scope grids, audit log previews
-- **Entity relationships from docs/code** → clickable knowledge graph with clustered communities
-- **Briefings for stakeholders** → animated slide deck with transitions
-- **Everything else** → your choice of 7 renderers, one command each
+- A decision tree wants a graph.
+- A status update wants a slide.
+- A spec wants a navigable site.
+- A schema wants a map.
 
----
+Codebase Helper is the toolkit that turns one Markdown file into any of
+those, on demand, locally, in seconds. No paragraphs you'll skip.
 
 ## Renderers
 
-Ask for a visualization and get a lettered menu of options suited to your content. Pick one.
+The canonical list is in [RENDERERS.md](RENDERERS.md). Six ship today.
 
-| Renderer | Output | Best for |
-|----------|--------|----------|
-| `mkdocs-preview` | Live local MkDocs Material site | Complex docs, SOPs, multi-page reference, anything needing search + sidebar |
-| `styled-doc` | Single-file HTML + optional PDF on Desktop | Finished documents to send, print, or share |
-| `system-map` | Interactive node/edge graph on Desktop | Workflows, agent maps, data pipelines, approval chains, if/then logic |
-| `arch-viz` | Interactive dark-theme identity flow HTML on Desktop | Auth/credential flows, identity cards, policy scope grids, animated step-by-step |
-| `graphify` | Clustered knowledge graph on Desktop | Entity relationships extracted from prose, docs, or code |
-| `deck` | Animated slide presentation on Desktop | Briefings, walkthroughs, anything shown to an audience sequentially |
-| `pandoc` | Plain portable HTML on Desktop | One-off conversion, no framework, fully self-contained |
+### mkdocs-preview - searchable site
 
-Full data shapes and usage in `RENDERERS.md`.
+Default renderer. Material for MkDocs themed local site at
+`127.0.0.1:8012`. Best for multi-page topics where you need search and
+nav.
 
----
-
-## Usage
-
-### Ask for a visualization (menu appears)
-
-When you say "visualize X" without naming a renderer, you get a lettered menu of options suited to the content. Pick one and it runs.
-
-### Run a specific renderer directly
+![mkdocs-preview](docs/assets/screenshots/mkdocs-preview.png)
 
 ```bash
-# Default: navigable MkDocs site (opens at localhost:8012)
 python3 scripts/preview_markdown.py path/to/note.md
+```
 
-# Polished single-file HTML + PDF
-python3 scripts/render_styled.py path/to/doc.md --pdf
+### styled-doc - finished single-file HTML
 
-# Interactive workflow/agent diagram
-python3 scripts/render_system_map.py path/to/map.md
+Self-contained styled HTML (with optional PDF) saved to Desktop. Use
+when the doc is the deliverable: a brief, a proposal, a handoff.
 
-# Auth/credential flow visualization
-python3 scripts/render_arch_viz.py path/to/arch.md
+![styled-doc](docs/assets/screenshots/styled-doc.png)
 
-# Knowledge graph from docs or code
-python3 scripts/render_graphify.py path/to/content.md
+```bash
+python3 scripts/render_styled.py path/to/doc.md --title "Plane PM Agent"
+```
 
-# Slide deck
-python3 scripts/render_deck.py path/to/deck.md
+### system-map - visual graph for flows and schemas
 
-# Plain portable HTML
+Interactive lane/card layout for agents, scripts, triggers, conditions,
+and if/then logic. Reads a fenced `system-map` JSON block from the
+Markdown.
+
+![system-map](docs/assets/screenshots/system-map.png)
+
+```bash
+python3 scripts/render_system_map.py docs/agent-system-map-sample.md
+```
+
+### pandoc - plain portable HTML
+
+Generic one-shot Markdown to standalone HTML via pandoc with embedded
+resources. No framework, no chrome - a single portable file.
+
+![pandoc](docs/assets/screenshots/pandoc.png)
+
+```bash
 python3 scripts/render_pandoc.py path/to/doc.md
 ```
 
-All renderers share the same flags: `--output PATH`, `--title "..."`, `--no-open`.
+### deck - animated browser slideshow
 
-### External Markdown (from another repo)
+Wraps [gsap-deck](https://github.com/arc-web/gsap-deck). Reads a fenced
+`json` block from the Markdown (or builds a stub from H1/H2 headings)
+and renders an animated HTML slide deck.
 
-Works without touching the source file:
-
-```bash
-python3 scripts/preview_markdown.py ~/ai/other-project/docs/notes.md
-```
-
-Renders as a transient preview under `.cache/` — source stays in the owning repo, nothing gets copied into `codebase_helper`.
-
----
-
-## Data formats
-
-### `system-map` — embed a fenced block in Markdown
-
-```markdown
-```system-map
-{
-  "title": "My Pipeline",
-  "nodes": [
-    { "id": "ingest", "label": "Ingest", "type": "agent", "lane": "input", "status": "current", "summary": "Pulls raw data" },
-    { "id": "process", "label": "Process", "type": "script", "lane": "core", "status": "current", "summary": "Transforms it" }
-  ],
-  "edges": [
-    { "from": "ingest", "to": "process", "label": "raw data" }
-  ]
-}
-```
-```
-
-### `arch-viz` — embed a fenced block in Markdown
-
-```markdown
-```arch-viz
-{
-  "project": { "title": "My Auth Architecture", "subtitle": "Who can read what" },
-  "identities": [
-    {
-      "id": "agent",
-      "name": "Automated Agent",
-      "icon": "🤖",
-      "authType": "AppRole",
-      "description": "Machine identity with scoped read access",
-      "steps": [ ... ],
-      "policies": { "allow": ["shared/*"], "deny": ["admin/*"] },
-      "auditLog": "role_name=agent | path=secret/data/shared/key | op=read"
-    }
-  ],
-  "flows": [ ... ],
-  "infrastructure": [ { "label": "Vault", "value": "https://vault.example.com" } ]
-}
-```
-```
-
-See `smoke/fixtures/arch-viz-sample.md` for a complete working example.
-
----
-
-## Smoke test
+![deck](docs/assets/screenshots/deck.png)
 
 ```bash
-bash smoke/smoke_preview_workflow.sh
+python3 scripts/render_deck.py path/to/talk.md
 ```
 
-Runs all renderers, validates output, restores any mutated files. Required before PRs.
+### graphify - interactive knowledge graph
 
----
+Wraps the graphify CLI. Extracts entities + relationships across docs
+(or a whole codebase), clusters communities, and emits a navigable HTML
+graph.
 
-## Adding a renderer
+![graphify](docs/assets/screenshots/graphify.png)
 
-One script under `scripts/`, one row in `RENDERERS.md`, one kebab-case name. See `RENDERERS.md` for the full spec. Do not extend an existing renderer; add a new named one.
+```bash
+python3 scripts/render_graphify.py path/to/doc.md
+python3 scripts/render_graphify.py path/to/docs-dir/
+```
+
+## Default behavior
+
+When the user says "open in html" with no other qualifier, the default
+is `mkdocs-preview`. That is the original mission: interactive
+websites for visual review of complex topics.
+
+## Why this exists
+
+Plain text scales for the writer. It does not scale for the reader.
+Codebase Helper exists so the reader can pick a shape that compresses
+the wall of text into something the eye reads in seconds instead of
+minutes - graph, map, deck, doc. Pick the one that matches the
+decision you have to make.
+
+## Adding a new renderer
+
+See the contract in [RENDERERS.md](RENDERERS.md). A new renderer:
+
+- Takes a Markdown path as its first positional argument.
+- Defaults output to `~/Desktop/`.
+- Supports `--no-open`.
+- Never writes back into the user's source file.
+- Adds a row to RENDERERS.md.
+
+One renderer = one script under `scripts/`. Shared CSS lives in
+`assets/`.
