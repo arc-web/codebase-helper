@@ -14,6 +14,7 @@ When asking a renderer by name, use the **name** column below.
 | `pandoc`          | `scripts/render_pandoc.py`      | Single-file HTML on Desktop (pandoc, standalone)    | Plain, no-framework one-shot Markdown -> HTML. Fully portable file.    |
 | `deck`            | `scripts/render_deck.py`        | Animated HTML presentation on Desktop (gsap-deck)   | Md/JSON deck source -> animated browser slideshow.                     |
 | `graphify`        | `scripts/render_graphify.py`    | Interactive HTML knowledge graph on Desktop          | Docs/code -> clustered entity+relationship graph (LLM-extracted).      |
+| `arch-viz`        | `scripts/render_arch_viz.py`    | Interactive dark-theme HTML on Desktop               | Auth/credential flows, identity cards, policy scopes, animated flows. Reads `arch-viz` fenced JSON block from Markdown. |
 
 ## Default
 
