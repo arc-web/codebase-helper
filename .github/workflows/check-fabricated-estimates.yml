@@ -1,6 +1,41 @@
 name: check-fabricated-estimates
+
 on:
   pull_request:
+
 jobs:
   check:
-    uses: arc-web/claude-skills/.github/workflows/check-fabricated-estimates.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan added lines for fabricated estimate language
+        run: |
+          set -u
+          PATTERN_NUMERIC='(will take|takes about|take about|estimated at|estimated|about|roughly|approximately|~)\s*[0-9]+\s*(min|minute|hour|day|week)s?'
+          PATTERN_PHRASE='(half an hour|quick task|quick win|small effort|fast win|long task|wall.?clock|human minutes|agent execution time|takes a (few|couple of) (minute|hour|day|week)s?)'
+
+          # Exclude the workflow file + canonical rule docs + hook script from self-scan
+          ADDED=$(git diff --no-color -U0 \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            -- . ':!.github/workflows/check-fabricated-estimates.yml' \
+            ':!house-rules/no-fabricated-estimates.md' \
+            ':!house-rules/pre-commit-no-estimates.sh' \
+            | grep -E '^\+[^+]' || true)
+
+          V_NUM=$(echo "$ADDED" | grep -inE "$PATTERN_NUMERIC" || true)
+          V_PHR=$(echo "$ADDED" | grep -inE "$PATTERN_PHRASE" || true)
+
+          if [ -n "$V_NUM" ] || [ -n "$V_PHR" ]; then
+            echo "::error::Fabricated effort-estimate language detected. See https://github.com/arc-web/claude-skills/blob/main/house-rules/no-fabricated-estimates.md"
+            [ -n "$V_NUM" ] && { echo "Numeric pattern violations:"; echo "$V_NUM"; }
+            [ -n "$V_PHR" ] && { echo "Phrasing pattern violations:"; echo "$V_PHR"; }
+            echo ""
+            echo "OK: real deadlines, human-set Plane time fields, calendar dates."
+            echo "Banned: agent-guessed durations."
+            exit 1
+          fi
+          echo "No fabricated estimate language found."
