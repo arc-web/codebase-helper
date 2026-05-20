@@ -67,3 +67,15 @@ preview path.
   intentionally. Persisted previews mutate `docs/`, `mkdocs.yml`, and
   `docs/artifacts/index.md`. Transient previews write only ignored cache
   output.
+
+---
+
+## House rules (non-negotiable, version-controlled)
+
+### No fabricated effort estimates
+
+Agents must not invent durations ("30 minutes", "half an hour", "quick task"). Real deadlines from humans/stakeholders ("by Friday", "before campaign launch") and human-set Plane time fields are fine.
+
+Canonical rule: <https://github.com/arc-web/claude-skills/blob/main/house-rules/no-fabricated-estimates.md>
+
+Enforced via pre-commit hook (global + per-repo) and CI workflow `check-fabricated-estimates`. Hard fail on violation. PR template carries the reminder.

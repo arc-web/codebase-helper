@@ -1,0 +1,6 @@
+name: check-fabricated-estimates
+on:
+  pull_request:
+jobs:
+  check:
+    uses: arc-web/claude-skills/.github/workflows/check-fabricated-estimates.yml@main
